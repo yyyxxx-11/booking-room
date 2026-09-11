@@ -1,4 +1,4 @@
-:root {
+root {
   color-scheme: light;
   --bg: #f3f5ef;
   --surface: #ffffff;
@@ -16,6 +16,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -109,8 +110,38 @@ svg {
 }
 
 main { width: min(100% - 48px, 1080px); margin: 0 auto; }
+.resource-switcher {
+  width: fit-content;
+  margin-top: 30px;
+  padding: 4px;
+  display: flex;
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.72);
+}
+.resource-button {
+  min-height: 38px;
+  padding: 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 700;
+}
+.resource-button svg { width: 17px; height: 17px; flex: 0 0 auto; }
+.resource-button.active {
+  color: white;
+  background: var(--ink);
+  box-shadow: 0 2px 8px rgba(23, 32, 28, 0.16);
+}
 .date-panel {
-  padding: 54px 0 34px;
+  padding: 28px 0 34px;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
@@ -195,6 +226,9 @@ h1 { margin: 0; font-size: clamp(30px, 4vw, 47px); line-height: 1.08; letter-spa
 .slot-detail strong, .slot-detail small { display: block; overflow-wrap: anywhere; }
 .slot-detail strong { font-size: 14px; font-weight: 600; }
 .slot-detail small { margin-top: 2px; color: var(--muted); font-size: 12px; }
+.booking-private { margin-top: 5px; display: flex; flex-wrap: wrap; gap: 4px 14px; color: var(--muted); font-size: 12px; }
+.booking-private b { color: var(--ink); font-weight: 600; }
+.booking-private span { min-width: 0; overflow-wrap: anywhere; }
 .reserve-button, .cancel-button {
   min-width: 86px;
   height: 36px;
@@ -231,6 +265,8 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
 }
 .dialog::backdrop { background: rgba(10, 18, 14, 0.55); backdrop-filter: blur(3px); }
 .dialog form { padding: 28px; }
+.auth-panel { padding: 28px; }
+.auth-panel form { padding: 0; }
 .dialog-icon {
   width: 42px;
   height: 42px;
@@ -254,10 +290,36 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   color: var(--ink);
   background: white;
 }
+.dialog input + label { margin-top: 17px; }
+.dialog .form-message { min-height: 20px; margin: 8px 0 0; color: var(--muted); font-size: 12px; }
+.dialog .form-message.error { color: #a43d29; }
 .dialog-actions { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
-.text-button, .primary-button { height: 40px; padding: 0 17px; border-radius: 6px; font-weight: 700; }
+.text-button, .primary-button, .danger-button { height: 40px; padding: 0 17px; border-radius: 6px; font-weight: 700; }
 .text-button { border: 1px solid var(--line); background: white; }
 .primary-button { border: 0; color: white; background: var(--green); }
+.danger-button { border: 1px solid #e0aa9f; color: #a43d29; background: var(--coral-soft); }
+.auth-alternative {
+  margin-top: 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.auth-alternative::before, .auth-alternative::after { height: 1px; flex: 1; content: ""; background: var(--line); }
+.admin-signin-button {
+  min-height: 40px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 0;
+  color: var(--green);
+  background: transparent;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.admin-signin-button svg { width: 16px; height: 16px; }
 
 .toast {
   position: fixed;
@@ -297,7 +359,9 @@ footer {
   .identity-button { max-width: 150px; }
   #identity-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   main { width: min(100% - 32px, 1080px); }
-  .date-panel { padding: 32px 0 24px; display: block; }
+  .resource-switcher { width: 100%; margin-top: 22px; }
+  .resource-button { flex: 1; padding: 0 10px; }
+  .date-panel { padding: 26px 0 24px; display: block; }
   h1 { font-size: 31px; }
   .date-controls { margin-top: 24px; }
   .date-controls .today-button { flex: 1; }
@@ -309,6 +373,9 @@ footer {
   .reserve-button, .cancel-button { min-width: 62px; padding: 0 10px; }
   .booked-label { display: none; }
   .dialog form { padding: 24px; }
+  .auth-panel { padding: 24px; }
+  .auth-panel form { padding: 0; }
+  .auth-panel .dialog-actions { flex-wrap: wrap; }
   footer { width: min(100% - 32px, 1080px); }
 }
 
