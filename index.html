@@ -1,79 +1,126 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f3f5ef">
-  <meta name="description" content="单会议室共享预约工具">
-  <title>会议室预约</title>
+  <meta name="description" content="Shared space booking tool">
+  <title>Space Booking</title>
   <link rel="stylesheet" href="styles.css">
   <script src="config.js"></script>
   <script type="module" src="app.js"></script>
 </head>
 <body>
   <header class="topbar">
-    <a class="brand" href="./" aria-label="会议室预约首页">
+    <a class="brand" href="./" aria-label="Space booking home">
       <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
       <span>
-        <strong id="room-name">会议室</strong>
-        <small>共享预约</small>
+        <strong id="room-name">Meeting Room</strong>
+        <small>Shared booking</small>
       </span>
     </a>
-    <button class="identity-button" id="identity-button" type="button" aria-label="设置预约人姓名">
+    <button class="identity-button" id="identity-button" type="button" aria-label="Set your name or manage account">
       <span class="avatar" id="avatar">?</span>
-      <span id="identity-label">设置姓名</span>
+      <span id="identity-label">Set name</span>
       <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
     </button>
   </header>
 
   <main>
+    <nav class="resource-switcher" aria-label="Choose a space">
+      <button class="resource-button active" type="button" data-resource="meeting-room" aria-pressed="true">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3h18M5 3v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3M8 21l4-4 4 4M8 9h8M8 13h5"/></svg>
+        <span>Meeting Room</span>
+      </button>
+      <button class="resource-button" type="button" data-resource="exhibition-booth" aria-pressed="false">
+        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 9l2-5h14l2 5M5 13v7h14v-7M9 20v-5h6v5M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg>
+        <span>Exhibition Booth</span>
+      </button>
+    </nav>
     <section class="date-panel" aria-labelledby="date-heading">
       <div>
-        <p class="eyebrow">单会议室 · 每次 30 分钟</p>
-        <h1 id="date-heading"><span id="selected-date-label">今天</span>的安排</h1>
-        <p class="timezone-note" id="timezone-note">房间时间 08:30–17:30</p>
+        <p class="eyebrow" id="resource-description">Meeting room · 30-minute slots</p>
+        <h1 id="date-heading"><span id="selected-date-label">Today</span>'s schedule</h1>
+        <p class="timezone-note" id="timezone-note">Room hours 08:30–17:30</p>
       </div>
       <div class="date-controls">
-        <button class="icon-button" id="previous-day" type="button" aria-label="前一天" title="前一天">
+        <button class="icon-button" id="previous-day" type="button" aria-label="Previous day" title="Previous day">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <button class="today-button" id="today-button" type="button">今天</button>
-        <button class="icon-button" id="next-day" type="button" aria-label="后一天" title="后一天">
+        <button class="today-button" id="today-button" type="button">Today</button>
+        <button class="icon-button" id="next-day" type="button" aria-label="Next day" title="Next day">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
         </button>
-        <label class="calendar-button" title="选择日期">
+        <label class="calendar-button" title="Choose a date">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/></svg>
-          <input id="date-picker" type="date" aria-label="选择日期">
+          <input id="date-picker" type="date" aria-label="Choose a date">
         </label>
       </div>
     </section>
 
-    <section class="schedule" aria-label="预约时间表">
+    <section class="schedule" aria-label="Booking schedule">
       <div class="schedule-heading">
-        <div class="status-key"><span class="status-dot available"></span>可预约 <span class="status-dot booked"></span>已预约</div>
+        <div class="status-key"><span class="status-dot available"></span>Available <span class="status-dot booked"></span>Booked</div>
         <button class="refresh-button" id="refresh-button" type="button">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-          刷新
+          Refresh
         </button>
       </div>
       <div class="slot-list" id="slot-list" aria-live="polite">
-        <div class="loading-state"><span class="spinner"></span>正在读取预约...</div>
+        <div class="loading-state"><span class="spinner"></span>Loading bookings...</div>
       </div>
     </section>
   </main>
+
+  <dialog id="auth-dialog" class="dialog">
+    <div class="auth-panel" id="signed-out-panel">
+      <div class="dialog-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M3 5h18v14H3V5Zm0 1 9 7 9-7"/></svg>
+      </div>
+      <h2>Administrator sign in</h2>
+      <p>We will email you a secure sign-in link. Open it in an external browser, not inside your email app. A custom SMTP provider is required for addresses outside the Supabase project team.</p>
+      <form id="email-form">
+        <label for="email-address">Email address</label>
+        <input id="email-address" type="email" autocomplete="email" placeholder="name@example.com" required>
+        <p class="form-message" id="email-status" role="status" aria-live="polite"></p>
+        <div class="dialog-actions">
+          <button class="text-button" type="button" data-close-dialog>Cancel</button>
+          <button class="primary-button" type="submit">Email sign-in link</button>
+        </div>
+      </form>
+    </div>
+    <div class="auth-panel" id="signed-in-panel" hidden>
+      <div class="dialog-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
+      </div>
+      <h2 id="account-name">Signed in</h2>
+      <p id="account-email"></p>
+      <div class="dialog-actions">
+        <button class="text-button" type="button" data-close-dialog>Close</button>
+        <button class="danger-button" id="sign-out-button" type="button">Sign out</button>
+      </div>
+    </div>
+  </dialog>
 
   <dialog id="identity-dialog" class="dialog">
     <form id="identity-form" method="dialog">
       <div class="dialog-icon" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0m8-10a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg>
       </div>
-      <h2>你叫什么名字？</h2>
-      <p>其他人会在你预约的时间段看到这个名字。</p>
-      <label for="display-name">姓名</label>
-      <input id="display-name" name="displayName" maxlength="40" autocomplete="name" placeholder="例如：王小明" required>
+      <h2>What is your name?</h2>
+      <p>Other people will see this name on the time slots you book.</p>
+      <label for="display-name">Name</label>
+      <input id="display-name" name="displayName" maxlength="40" autocomplete="name" placeholder="e.g. Alex Smith" required>
       <div class="dialog-actions">
-        <button class="text-button" type="button" data-close-dialog>取消</button>
-        <button class="primary-button" type="submit">保存</button>
+        <button class="text-button" type="button" data-close-dialog>Cancel</button>
+        <button class="primary-button" type="submit">Save</button>
+      </div>
+      <div class="auth-alternative">
+        <span>or</span>
+        <button class="admin-signin-button" id="admin-signin-button" type="button">
+          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 5h18v14H3V5Zm0 1 9 7 9-7"/></svg>
+          Administrator sign in
+        </button>
       </div>
     </form>
   </dialog>
@@ -83,20 +130,22 @@
       <div class="dialog-icon booking" aria-hidden="true">
         <svg viewBox="0 0 24 24"><path d="M12 6v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
       </div>
-      <h2>确认预约</h2>
+      <h2>Confirm booking</h2>
       <p id="booking-summary"></p>
       <input id="booking-slot" type="hidden">
-      <label for="booking-purpose">用途 <span>选填</span></label>
-      <input id="booking-purpose" maxlength="80" placeholder="例如：项目周会">
+      <label for="booking-purpose">Visit purpose <span>Private</span></label>
+      <input id="booking-purpose" maxlength="200" placeholder="e.g. Product demonstration" required>
+      <label for="booking-attendees">Attendees <span>Private</span></label>
+      <input id="booking-attendees" maxlength="500" placeholder="e.g. Alex Smith, Jamie Lee" required>
       <div class="dialog-actions">
-        <button class="text-button" type="button" data-close-dialog>返回</button>
-        <button class="primary-button" type="submit">确认预约</button>
+        <button class="text-button" type="button" data-close-dialog>Back</button>
+        <button class="primary-button" type="submit">Confirm booking</button>
       </div>
     </form>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <footer><span id="footer-room-name">会议室</span><span>预约数据实时同步</span></footer>
+  <footer><span id="footer-room-name">Meeting Room</span><span>Bookings sync in real time</span></footer>
 </body>
 </html>
 
