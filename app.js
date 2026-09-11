@@ -2,7 +2,7 @@ const config = window.BOOKING_CONFIG || {};
 const isCloudConfigured = Boolean(config.SUPABASE_URL && config.SUPABASE_ANON_KEY);
 const resources = {
   "meeting-room": {
-    name: config.ROOM_NAME || "Meeting Room",
+    name: "Meeting Room",
     description: "Meeting room · 30-minute slots"
   },
   "exhibition-booth": {
@@ -30,9 +30,10 @@ const elements = {
   authDialog: document.querySelector("#auth-dialog"),
   signedOutPanel: document.querySelector("#signed-out-panel"),
   signedInPanel: document.querySelector("#signed-in-panel"),
-  emailForm: document.querySelector("#email-form"),
-  emailAddress: document.querySelector("#email-address"),
-  emailStatus: document.querySelector("#email-status"),
+  adminLoginForm: document.querySelector("#admin-login-form"),
+  adminUsername: document.querySelector("#admin-username"),
+  adminPassword: document.querySelector("#admin-password"),
+  authStatus: document.querySelector("#auth-status"),
   accountName: document.querySelector("#account-name"),
   accountEmail: document.querySelector("#account-email"),
   signOutButton: document.querySelector("#sign-out-button"),
@@ -347,12 +348,18 @@ async function createCloudDataSource() {
       if (error) throw error;
       if (count === 0) throw new Error("You can only cancel your own bookings.");
     },
-    async sendMagicLink(email) {
-      const { error } = await client.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${location.origin}${location.pathname}` }
-      });
+    async signInAdmin(username, password) {
+      const email = `${username.trim().toLowerCase()}@booking.example`;
+      const { data, error } = await client.auth.signInWithPassword({ email, password });
       if (error) throw error;
+      await applySession(data.session);
+      if (!state.isAdmin) {
+        await client.auth.signOut();
+        const anonymousResult = await client.auth.signInAnonymously();
+        if (anonymousResult.error) throw anonymousResult.error;
+        await applySession(anonymousResult.data.session);
+        throw new Error("This account is not an administrator.");
+      }
     },
     async signOut() {
       const { error } = await client.auth.signOut();
@@ -422,7 +429,7 @@ elements.identityButton.addEventListener("click", () => {
 });
 elements.adminSignInButton.addEventListener("click", () => {
   if (!isCloudConfigured) {
-    showToast("Email sign-in requires Supabase configuration", true);
+    showToast("Administrator sign-in requires Supabase configuration", true);
     return;
   }
   if (!state.dataSource) {
@@ -432,32 +439,34 @@ elements.adminSignInButton.addEventListener("click", () => {
   elements.identityDialog.close();
   elements.signedOutPanel.hidden = false;
   elements.signedInPanel.hidden = true;
-  elements.emailAddress.value = "";
-  elements.emailStatus.textContent = "";
-  elements.emailStatus.classList.remove("error");
+  elements.adminUsername.value = "";
+  elements.adminPassword.value = "";
+  elements.authStatus.textContent = "";
+  elements.authStatus.classList.remove("error");
   elements.authDialog.showModal();
 });
-elements.emailForm.addEventListener("submit", async (event) => {
+elements.adminLoginForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const submitButton = elements.emailForm.querySelector('[type="submit"]');
-  const email = elements.emailAddress.value.trim().toLowerCase();
-  elements.emailStatus.textContent = "Sending sign-in link...";
-  elements.emailStatus.classList.remove("error");
+  const submitButton = elements.adminLoginForm.querySelector('[type="submit"]');
+  const username = elements.adminUsername.value;
+  const password = elements.adminPassword.value;
+  elements.authStatus.textContent = "Signing in...";
+  elements.authStatus.classList.remove("error");
   submitButton.disabled = true;
   try {
-    await state.dataSource.sendMagicLink(email);
-    elements.emailStatus.textContent = `Request submitted for ${email}, but delivery is not confirmed. If it does not arrive, use a Supabase project team email or configure custom SMTP.`;
-    showToast("Sign-in request submitted; delivery is not confirmed");
+    await state.dataSource.signInAdmin(username, password);
+    renderHeader();
+    elements.authDialog.close();
+    showToast(`Signed in as ${state.displayName}`);
+    await refreshBookings();
   } catch (error) {
-    const normalizedMessage = error.message?.toLowerCase() || "";
-    const message = normalizedMessage.includes("not authorized")
-      ? "This address is not in the Supabase project team. Configure custom SMTP to email other addresses."
-      : normalizedMessage.includes("rate limit")
-      ? "Too many emails have been requested. Please wait and try again later."
-      : (error.message || "Could not send sign-in link");
-    elements.emailStatus.textContent = message;
-    elements.emailStatus.classList.add("error");
+    const message = error.message?.toLowerCase().includes("invalid login credentials")
+      ? "Incorrect administrator or password."
+      : (error.message || "Could not sign in");
+    elements.authStatus.textContent = message;
+    elements.authStatus.classList.add("error");
   } finally {
+    elements.adminPassword.value = "";
     submitButton.disabled = false;
   }
 });
