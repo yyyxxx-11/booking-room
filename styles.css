@@ -1,4 +1,4 @@
-root {
+:root {
   color-scheme: light;
   --bg: #f3f5ef;
   --surface: #ffffff;
@@ -29,7 +29,11 @@ body {
 }
 
 button, input { font: inherit; }
-button { color: inherit; }
+button {
+  appearance: none;
+  -webkit-appearance: none;
+  color: inherit;
+}
 button:not(:disabled), label:has(input) { cursor: pointer; }
 button:focus-visible, input:focus-visible { outline: 3px solid rgba(35, 117, 90, 0.24); outline-offset: 2px; }
 
@@ -135,9 +139,10 @@ main { width: min(100% - 48px, 1080px); margin: 0 auto; }
   font-weight: 700;
 }
 .resource-button svg { width: 17px; height: 17px; flex: 0 0 auto; }
-.resource-button.active {
-  color: white;
-  background: var(--ink);
+.resource-button.active,
+.resource-button[aria-pressed="true"] {
+  color: white !important;
+  background-color: #17201c !important;
   box-shadow: 0 2px 8px rgba(23, 32, 28, 0.16);
 }
 .date-panel {
@@ -237,7 +242,7 @@ h1 { margin: 0; font-size: clamp(30px, 4vw, 47px); line-height: 1.08; letter-spa
   font-size: 13px;
   font-weight: 700;
 }
-.reserve-button { border: 0; color: white; background: var(--green); }
+.reserve-button { border: 1px solid #1f6b4f; color: white !important; background-color: #1f6b4f !important; }
 .cancel-button { border: 1px solid #e0aa9f; color: #a43d29; background: var(--coral-soft); }
 .booked-label { padding-right: 4px; color: var(--muted); font-size: 12px; }
 button:disabled { cursor: not-allowed; opacity: 0.55; }
