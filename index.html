@@ -13,7 +13,7 @@
       --surface: #ffffff;
       --ink: #17201c;
       --muted: #66726b;
-      --line: #dce2dc;
+      --line: #dce2dc
       --green: #1f6b4f;
       --green-soft: #e4f2e9;
       --coral: #c9553d;
@@ -33,7 +33,7 @@
     }
   </style>
   <script src="config.js?v=20260911-4"></script>
-  <script type="module" src="app.js?v=20260911-5"></script>
+  <script type="module" src="app.js?v=20260911-8"></script>
 </head>
 <body>
   <header class="topbar">
@@ -103,14 +103,16 @@
         <svg viewBox="0 0 24 24"><path d="M3 5h18v14H3V5Zm0 1 9 7 9-7"/></svg>
       </div>
       <h2>Administrator sign in</h2>
-      <p>We will email you a secure sign-in link. Open it in an external browser, not inside your email app. A custom SMTP provider is required for addresses outside the Supabase project team.</p>
-      <form id="email-form">
-        <label for="email-address">Email address</label>
-        <input id="email-address" type="email" autocomplete="email" placeholder="name@example.com" required>
-        <p class="form-message" id="email-status" role="status" aria-live="polite"></p>
+      <p>Sign in with your administrator username and password.</p>
+      <form id="admin-login-form">
+        <label for="admin-username">Username</label>
+        <input id="admin-username" type="text" autocomplete="username" placeholder="Administrator name" required>
+        <label for="admin-password">Password</label>
+        <input id="admin-password" type="password" autocomplete="current-password" minlength="8" required>
+        <p class="form-message" id="auth-status" role="status" aria-live="polite"></p>
         <div class="dialog-actions">
           <button class="text-button" type="button" data-close-dialog>Cancel</button>
-          <button class="primary-button" type="submit">Email sign-in link</button>
+          <button class="primary-button" type="submit">Sign in</button>
         </div>
       </form>
     </div>
