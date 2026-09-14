@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#f3f5ef">
   <meta name="description" content="Shared space booking tool">
   <title>Space Booking</title>
-  <link rel="stylesheet" href="styles.css?v=20260911-5">
+  <link rel="stylesheet" href="styles.css?v=20260911-6">
   <style>
     :root {
       --bg: #f3f5ef;
@@ -33,7 +33,7 @@
     }
   </style>
   <script src="config.js?v=20260911-4"></script>
-  <script type="module" src="app.js?v=20260911-8"></script>
+    <script type="module" src="app.js?v=20260911-11"></script>
 </head>
 <body>
   <header class="topbar">
@@ -72,7 +72,7 @@
         <button class="icon-button" id="previous-day" type="button" aria-label="Previous day" title="Previous day">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></svg>
         </button>
-        <button class="today-button" id="today-button" type="button">Today</button>
+        <output class="today-button" id="today-button" aria-live="polite">Nov 29</output>
         <button class="icon-button" id="next-day" type="button" aria-label="Next day" title="Next day">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>
         </button>
@@ -164,6 +164,19 @@
       <input id="booking-purpose" maxlength="200" placeholder="e.g. Product demonstration" required>
       <label for="booking-attendees">Attendees <span>Private</span></label>
       <input id="booking-attendees" maxlength="500" placeholder="e.g. Alex Smith, Jamie Lee" required>
+      <label class="product-label" id="product-label">Products <span>Private · Select one or more</span></label>
+      <details class="product-select">
+        <summary id="product-summary" aria-labelledby="product-label">Select products</summary>
+        <div class="product-options">
+          <label><input type="checkbox" name="booking-products" value="DR"> DR</label>
+          <label><input type="checkbox" name="booking-products" value="CT"> CT</label>
+          <label><input type="checkbox" name="booking-products" value="C-arm"> C-arm</label>
+          <label><input type="checkbox" name="booking-products" value="Detector"> Detector</label>
+          <label><input type="checkbox" name="booking-products" value="Retrofit"> Retrofit</label>
+          <label><input type="checkbox" name="booking-products" value="Workstation"> Workstation</label>
+          <label><input type="checkbox" name="booking-products" value="others"> others</label>
+        </div>
+      </details>
       <div class="dialog-actions">
         <button class="text-button" type="button" data-close-dialog>Back</button>
         <button class="primary-button" type="submit">Confirm booking</button>
