@@ -296,6 +296,58 @@ button:disabled { cursor: not-allowed; opacity: 0.55; }
   background: white;
 }
 .dialog input + label { margin-top: 17px; }
+.dialog .product-label { margin-top: 17px; }
+.product-select {
+  position: relative;
+  border: 1px solid #cbd3cc;
+  border-radius: 5px;
+  background: white;
+}
+.product-select summary {
+  min-height: 44px;
+  padding: 11px 38px 11px 12px;
+  display: flex;
+  align-items: center;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+  overflow-wrap: anywhere;
+}
+.product-select summary::-webkit-details-marker { display: none; }
+.product-select summary::after {
+  position: absolute;
+  top: 15px;
+  right: 14px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  content: "";
+  transform: rotate(45deg);
+}
+.product-select[open] summary::after { top: 19px; transform: rotate(225deg); }
+.product-options {
+  max-height: 190px;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+  border-top: 1px solid var(--line);
+  overflow-y: auto;
+}
+.dialog .product-options label {
+  min-height: 36px;
+  margin: 0;
+  padding: 7px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.dialog .product-options label:hover { background: var(--green-soft); }
+.dialog .product-options input { width: 16px; height: 16px; flex: 0 0 auto; accent-color: var(--green); }
 .dialog .form-message { min-height: 20px; margin: 8px 0 0; color: var(--muted); font-size: 12px; }
 .dialog .form-message.error { color: #a43d29; }
 .dialog-actions { margin-top: 25px; display: flex; justify-content: flex-end; gap: 10px; }
