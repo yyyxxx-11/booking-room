@@ -1,5 +1,7 @@
 const config = window.BOOKING_CONFIG || {};
 const isCloudConfigured = Boolean(config.SUPABASE_URL && config.SUPABASE_ANON_KEY);
+const bookingStartDate = "2026-11-29";
+const bookingEndDate = "2026-12-03";
 const resources = {
   "meeting-room": {
     name: "Meeting Room",
@@ -47,11 +49,13 @@ const elements = {
   bookingSlot: document.querySelector("#booking-slot"),
   bookingPurpose: document.querySelector("#booking-purpose"),
   bookingAttendees: document.querySelector("#booking-attendees"),
+  bookingProducts: document.querySelectorAll('input[name="booking-products"]'),
+  productSummary: document.querySelector("#product-summary"),
   toast: document.querySelector("#toast")
 };
 
 const state = {
-  selectedDate: getCalendarToday(),
+  selectedDate: bookingStartDate,
   selectedResource: localStorage.getItem("booking-resource") in resources
     ? localStorage.getItem("booking-resource")
     : "meeting-room",
@@ -85,6 +89,14 @@ function formatDate(dateString) {
     day: "numeric",
     weekday: "long"
   }).format(date);
+}
+
+function formatShortDate(dateString) {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: "UTC",
+    month: "short",
+    day: "numeric"
+  }).format(new Date(`${dateString}T12:00:00Z`));
 }
 
 function slotTimes() {
@@ -138,9 +150,12 @@ function renderHeader() {
   });
   elements.timezoneNote.textContent = `Room hours 08:30–17:30${isCloudConfigured ? "" : " · Local demo"}`;
   elements.selectedDateLabel.textContent = formatDate(state.selectedDate);
+  elements.todayButton.textContent = formatShortDate(state.selectedDate);
   elements.datePicker.value = state.selectedDate;
-  elements.datePicker.min = getCalendarToday();
-  elements.previousDay.disabled = state.selectedDate <= getCalendarToday();
+  elements.datePicker.min = bookingStartDate;
+  elements.datePicker.max = bookingEndDate;
+  elements.previousDay.disabled = state.selectedDate <= bookingStartDate;
+  elements.nextDay.disabled = state.selectedDate >= bookingEndDate;
   elements.identityLabel.textContent = state.isEmailUser
     ? (state.isAdmin ? state.displayName : maskEmail(state.email))
     : (state.displayName || "Set name");
@@ -170,6 +185,11 @@ function renderSlots() {
       const attendees = createElement("span", "");
       attendees.append(createElement("b", "", "Attendees: "), booking.attendees);
       privateDetails.append(purpose, attendees);
+      if (booking.products?.length) {
+        const products = createElement("span", "");
+        products.append(createElement("b", "", "Products: "), booking.products.join(", "));
+        privateDetails.append(products);
+      }
       detail.append(privateDetails);
     }
     status.append(statusIcon, detail);
@@ -235,6 +255,8 @@ function openBookingDialog(time) {
   elements.bookingSlot.value = time;
   elements.bookingPurpose.value = "";
   elements.bookingAttendees.value = "";
+  elements.bookingProducts.forEach((checkbox) => { checkbox.checked = false; });
+  elements.productSummary.textContent = "Select products";
   elements.bookingSummary.textContent = `${resources[state.selectedResource].name}: ${formatDate(state.selectedDate)}, ${time}–${addMinutes(time, 30)}, booked by ${state.displayName}.`;
   elements.bookingDialog.showModal();
 }
@@ -326,7 +348,7 @@ async function createCloudDataSource() {
       const { data, error } = await client.from("bookings").select("id, resource, booking_date, start_time, display_name, user_id").eq("booking_date", date).eq("resource", resource).order("start_time");
       if (error) throw error;
       if (data.length === 0) return data;
-      const { data: details, error: detailsError } = await client.from("booking_details").select("booking_id, purpose, attendees").in("booking_id", data.map((booking) => booking.id));
+      const { data: details, error: detailsError } = await client.from("booking_details").select("booking_id, purpose, attendees, products").in("booking_id", data.map((booking) => booking.id));
       if (detailsError) throw detailsError;
       const detailByBooking = new Map(details.map((detail) => [detail.booking_id, detail]));
       return data.map((booking) => ({ ...booking, ...detailByBooking.get(booking.id) }));
@@ -338,7 +360,8 @@ async function createCloudDataSource() {
         p_start_time: booking.start_time,
         p_display_name: booking.display_name,
         p_purpose: booking.purpose,
-        p_attendees: booking.attendees
+        p_attendees: booking.attendees,
+        p_products: booking.products
       });
       if (error?.code === "23505") throw new Error("This time slot was just booked. Please choose another time.");
       if (error) throw error;
@@ -393,13 +416,9 @@ elements.nextDay.addEventListener("click", async () => {
   renderHeader();
   await refreshBookings();
 });
-elements.todayButton.addEventListener("click", async () => {
-  state.selectedDate = getCalendarToday();
-  renderHeader();
-  await refreshBookings();
-});
 elements.datePicker.addEventListener("change", async (event) => {
   if (!event.target.value) return;
+  if (event.target.value < bookingStartDate || event.target.value > bookingEndDate) return;
   state.selectedDate = event.target.value;
   renderHeader();
   await refreshBookings();
@@ -497,6 +516,13 @@ elements.identityForm.addEventListener("submit", (event) => {
 elements.bookingForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const submitButton = elements.bookingForm.querySelector('[type="submit"]');
+  const products = Array.from(elements.bookingProducts)
+    .filter((checkbox) => checkbox.checked)
+    .map((checkbox) => checkbox.value);
+  if (products.length === 0) {
+    showToast("Select at least one product", true);
+    return;
+  }
   submitButton.disabled = true;
   try {
     const time = elements.bookingSlot.value;
@@ -507,7 +533,8 @@ elements.bookingForm.addEventListener("submit", async (event) => {
       end_time: `${addMinutes(time, 30)}:00`,
       display_name: state.displayName,
       purpose: elements.bookingPurpose.value.trim(),
-      attendees: elements.bookingAttendees.value.trim()
+      attendees: elements.bookingAttendees.value.trim(),
+      products
     });
     elements.bookingDialog.close();
     showToast("Booking confirmed");
@@ -519,6 +546,16 @@ elements.bookingForm.addEventListener("submit", async (event) => {
     submitButton.disabled = false;
   }
 });
+elements.bookingProducts.forEach((checkbox) => {
+  checkbox.addEventListener("change", () => {
+    const selectedProducts = Array.from(elements.bookingProducts)
+      .filter((item) => item.checked)
+      .map((item) => item.value);
+    elements.productSummary.textContent = selectedProducts.length
+      ? selectedProducts.join(", ")
+      : "Select products";
+  });
+});
 document.querySelectorAll("[data-close-dialog]").forEach((button) => {
   button.addEventListener("click", () => button.closest("dialog").close());
 });
@@ -529,3 +566,4 @@ document.querySelectorAll("dialog").forEach((dialog) => {
 });
 
 initialize();
+
