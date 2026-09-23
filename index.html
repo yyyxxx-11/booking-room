@@ -3,46 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#f3f5ef">
-  <meta name="description" content="Shared space booking tool">
-  <title>Space Booking</title>
-  <link rel="stylesheet" href="styles.css?v=20260911-6">
-  <style>
-    :root {
-      --bg: #f3f5ef;
-      --surface: #ffffff;
-      --ink: #17201c;
-      --muted: #66726b;
-      --line: #dce2dc
-      --green: #1f6b4f;
-      --green-soft: #e4f2e9;
-      --coral: #c9553d;
-      --coral-soft: #f8e9e5;
-      --focus: #23755a;
-      --shadow: 0 12px 34px rgba(23, 32, 28, 0.08);
-    }
-    .resource-button.active,
-    .resource-button[aria-pressed="true"] {
-      color: #ffffff !important;
-      background-color: #17201c !important;
-    }
-    .reserve-button {
-      border-color: #1f6b4f !important;
-      color: #ffffff !important;
-      background-color: #1f6b4f !important;
-    }
-  </style>
+  <meta name="theme-color" content="#f47421">
+  <meta name="description" content="Carestream exhibition booth booking">
+  <title>Carestream Exhibition Booking</title>
+  <link rel="stylesheet" href="styles.css?v=20260922-11">
   <script src="config.js?v=20260911-4"></script>
-    <script type="module" src="app.js?v=20260911-11"></script>
+  <script type="module" src="app.js?v=20260922-9"></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="./" aria-label="Space booking home">
-      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
-      <span>
-        <strong id="room-name">Meeting Room</strong>
-        <small>Shared booking</small>
-      </span>
+  <header class="topbar" id="overview-header">
+    <a class="brand" href="./" aria-label="Carestream exhibition booking home">
+      <strong id="room-name">Carestream</strong>
     </a>
     <button class="identity-button" id="identity-button" type="button" aria-label="Set your name or manage account">
       <span class="avatar" id="avatar">?</span>
@@ -51,22 +22,12 @@
     </button>
   </header>
 
-  <main>
-    <nav class="resource-switcher" aria-label="Choose a space">
-      <button class="resource-button active" type="button" data-resource="meeting-room" aria-pressed="true">
-        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 3h18M5 3v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3M8 21l4-4 4 4M8 9h8M8 13h5"/></svg>
-        <span>Meeting Room</span>
-      </button>
-      <button class="resource-button" type="button" data-resource="exhibition-booth" aria-pressed="false">
-        <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 9l2-5h14l2 5M5 13v7h14v-7M9 20v-5h6v5M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0"/></svg>
-        <span>Exhibition Booth</span>
-      </button>
-    </nav>
+  <main id="overview-page">
     <section class="date-panel" aria-labelledby="date-heading">
       <div>
-        <p class="eyebrow" id="resource-description">Meeting room · 30-minute slots</p>
-        <h1 id="date-heading"><span id="selected-date-label">Today</span>'s schedule</h1>
-        <p class="timezone-note" id="timezone-note">Room hours 08:30–17:30</p>
+        <p class="eyebrow" id="resource-description">Exhibition booth booking</p>
+        <h1 id="date-heading">Schedule your demo at RSNA</h1>
+        <p class="timezone-note"><span id="selected-date-label">Sunday, November 29</span> · <span id="timezone-note">Booth hours 08:30–17:30</span></p>
       </div>
       <div class="date-controls">
         <button class="icon-button" id="previous-day" type="button" aria-label="Previous day" title="Previous day">
@@ -78,20 +39,31 @@
         </button>
         <label class="calendar-button" title="Choose a date">
           <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 2v4m8-4v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14H3V6a2 2 0 0 1 2-2Z"/></svg>
-          <input id="date-picker" type="date" aria-label="Choose a date">
+          <select id="date-picker" aria-label="Choose a date">
+            <option value="2026-11-29">November 29</option>
+            <option value="2026-11-30">November 30</option>
+            <option value="2026-12-01">December 1</option>
+            <option value="2026-12-02">December 2</option>
+          </select>
         </label>
       </div>
     </section>
 
     <section class="schedule" aria-label="Booking schedule">
       <div class="schedule-heading">
-        <div class="status-key"><span class="status-dot available"></span>Available <span class="status-dot booked"></span>Booked</div>
-        <button class="refresh-button" id="refresh-button" type="button">
-          <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
-          Refresh
-        </button>
+        <div class="status-key"><span class="status-dot booked"></span>Booked</div>
+        <div class="schedule-actions">
+          <button class="export-button" id="export-button" type="button" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v4h16v-4"/></svg>
+            Export Excel
+          </button>
+          <button class="refresh-button" id="refresh-button" type="button">
+            <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>
+            Refresh
+          </button>
+        </div>
       </div>
-      <div class="slot-list" id="slot-list" aria-live="polite">
+      <div class="booth-grid" id="slot-list" aria-live="polite">
         <div class="loading-state"><span class="spinner"></span>Loading bookings...</div>
       </div>
     </section>
@@ -137,7 +109,7 @@
       <h2>What is your name?</h2>
       <p>Other people will see this name on the time slots you book.</p>
       <label for="display-name">Name</label>
-      <input id="display-name" name="displayName" maxlength="40" autocomplete="name" placeholder="e.g. Alex Smith" required>
+      <input id="display-name" name="displayName" maxlength="40" autocomplete="name" required>
       <div class="dialog-actions">
         <button class="text-button" type="button" data-close-dialog>Cancel</button>
         <button class="primary-button" type="submit">Save</button>
@@ -152,40 +124,49 @@
     </form>
   </dialog>
 
-  <dialog id="booking-dialog" class="dialog">
-    <form id="booking-form" method="dialog">
-      <div class="dialog-icon booking" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><path d="M12 6v6l4 2M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/></svg>
-      </div>
-      <h2>Confirm booking</h2>
-      <p id="booking-summary"></p>
-      <input id="booking-slot" type="hidden">
-      <label for="booking-purpose">Visit purpose <span>Private</span></label>
-      <input id="booking-purpose" maxlength="200" placeholder="e.g. Product demonstration" required>
-      <label for="booking-attendees">Attendees <span>Private</span></label>
-      <input id="booking-attendees" maxlength="500" placeholder="e.g. Alex Smith, Jamie Lee" required>
-      <label class="product-label" id="product-label">Products <span>Private · Select one or more</span></label>
-      <details class="product-select">
-        <summary id="product-summary" aria-labelledby="product-label">Select products</summary>
-        <div class="product-options">
-          <label><input type="checkbox" name="booking-products" value="DR"> DR</label>
-          <label><input type="checkbox" name="booking-products" value="CT"> CT</label>
-          <label><input type="checkbox" name="booking-products" value="C-arm"> C-arm</label>
-          <label><input type="checkbox" name="booking-products" value="Detector"> Detector</label>
-          <label><input type="checkbox" name="booking-products" value="Retrofit"> Retrofit</label>
-          <label><input type="checkbox" name="booking-products" value="Workstation"> Workstation</label>
-          <label><input type="checkbox" name="booking-products" value="others"> others</label>
-        </div>
-      </details>
-      <div class="dialog-actions">
-        <button class="text-button" type="button" data-close-dialog>Back</button>
-        <button class="primary-button" type="submit">Confirm booking</button>
-      </div>
-    </form>
-  </dialog>
+  <section class="appointment-page" id="appointment-page" hidden>
+    <div class="appointment-brand">Carestream</div>
+    <button class="appointment-back" id="appointment-back" type="button">← Go back</button>
+    <div class="appointment-panel">
+      <h1>Appointment Information</h1>
+      <dl class="appointment-summary" id="booking-summary">
+        <div><dt>Exposition</dt><dd id="summary-booth"></dd></div>
+        <div><dt>Expositor</dt><dd id="summary-host"></dd></div>
+        <div><dt>Date</dt><dd id="summary-date"></dd></div>
+        <div><dt>Time</dt><dd id="summary-time"></dd></div>
+      </dl>
+
+      <h2>Schedule your appointment</h2>
+      <form id="booking-form">
+        <input id="booking-slot" type="hidden">
+        <fieldset>
+          <legend>Customer Information</legend>
+          <label><span>*Customer First Name</span><input id="customer-first-name" maxlength="80" autocomplete="given-name" required></label>
+          <label><span>*Customer Last Name</span><input id="customer-last-name" maxlength="80" autocomplete="family-name" required></label>
+          <label><span>*Company</span><input id="customer-company" maxlength="160" autocomplete="organization" required></label>
+          <label><span>Position Title</span><input id="customer-position" maxlength="160" autocomplete="organization-title"></label>
+          <label><span>Country</span><input id="customer-country" maxlength="100" autocomplete="country-name"></label>
+          <label><span>E-Mail</span><input id="customer-email" type="email" maxlength="254" autocomplete="email"></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>*Please provide your Carestream contact email</legend>
+          <label><span>*Email</span><input id="contact-email" type="email" maxlength="254" required></label>
+          <label class="na-option"><input id="contact-email-na" type="checkbox"> N/A</label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Schedule your appointment</legend>
+          <textarea id="booking-purpose" maxlength="1000" placeholder="Please provide any information on the customer that would be helpful to the presenter to provide a more customized and valuable demo."></textarea>
+        </fieldset>
+        <div class="appointment-submit"><button type="submit">Send</button></div>
+        <p class="availability-note">* Schedule availability may change at any time</p>
+      </form>
+    </div>
+  </section>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <footer><span id="footer-room-name">Meeting Room</span><span>Bookings sync in real time</span></footer>
+  <footer id="overview-footer"><span id="footer-room-name">Carestream Exhibition Booths</span><span>Bookings sync in real time</span></footer>
 </body>
 </html>
 
