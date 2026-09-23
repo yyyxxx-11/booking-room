@@ -1,23 +1,23 @@
 const config = window.BOOKING_CONFIG || {};
 const isCloudConfigured = Boolean(config.SUPABASE_URL && config.SUPABASE_ANON_KEY);
 const bookingStartDate = "2026-11-29";
-const bookingEndDate = "2026-12-03";
-const resources = {
-  "meeting-room": {
-    name: "Meeting Room",
-    description: "Meeting room · 30-minute slots"
-  },
-  "exhibition-booth": {
-    name: config.BOOTH_NAME || "Exhibition Booth",
-    description: "Exhibition booth · 30-minute slots"
-  }
-};
+const bookingEndDate = "2026-12-02";
+const bookingDates = ["2026-11-29", "2026-11-30", "2026-12-01", "2026-12-02"];
+const resources = [
+  { id: "drx-evolution", name: "DRX Evolution", morningHost: "Joe Lu", afternoonHost: "TBD1" },
+  { id: "compass-fmt", name: "Compass-FMT", morningHost: "Salvatore Cesaria", afternoonHost: "TBD2" },
+  { id: "premium-performance-mobile", name: "New Premium Mobile & Performance Mobile", morningHost: "Felix Zhang", afternoonHost: "Antonio Cavallaro" },
+  { id: "drx-revolution-rise", name: "DRX-Revolution & DRX-Rise", morningHost: "TBD3", afternoonHost: "TBD4" },
+  { id: "dyna-c300", name: "Dyna-C300", morningHost: "Luke Li", afternoonHost: "TBD5" },
+  { id: "detectors-retrofits", name: "Detectors & Retrofits", morningHost: "Marco Riolfo", afternoonHost: "TBD6" },
+  { id: "eclipse-carestream-360", name: "Eclipse & Carestream 360", morningHost: "TBD7", afternoonHost: "TBD8" }
+];
+const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
 
 const elements = {
   roomName: document.querySelector("#room-name"),
   footerRoomName: document.querySelector("#footer-room-name"),
   resourceDescription: document.querySelector("#resource-description"),
-  resourceButtons: document.querySelectorAll("[data-resource]"),
   selectedDateLabel: document.querySelector("#selected-date-label"),
   timezoneNote: document.querySelector("#timezone-note"),
   datePicker: document.querySelector("#date-picker"),
@@ -25,7 +25,13 @@ const elements = {
   nextDay: document.querySelector("#next-day"),
   todayButton: document.querySelector("#today-button"),
   refreshButton: document.querySelector("#refresh-button"),
+  exportButton: document.querySelector("#export-button"),
   slotList: document.querySelector("#slot-list"),
+  overviewHeader: document.querySelector("#overview-header"),
+  overviewPage: document.querySelector("#overview-page"),
+  overviewFooter: document.querySelector("#overview-footer"),
+  appointmentPage: document.querySelector("#appointment-page"),
+  appointmentBack: document.querySelector("#appointment-back"),
   identityButton: document.querySelector("#identity-button"),
   identityLabel: document.querySelector("#identity-label"),
   avatar: document.querySelector("#avatar"),
@@ -43,22 +49,27 @@ const elements = {
   identityForm: document.querySelector("#identity-form"),
   displayName: document.querySelector("#display-name"),
   adminSignInButton: document.querySelector("#admin-signin-button"),
-  bookingDialog: document.querySelector("#booking-dialog"),
   bookingForm: document.querySelector("#booking-form"),
-  bookingSummary: document.querySelector("#booking-summary"),
   bookingSlot: document.querySelector("#booking-slot"),
+  summaryBooth: document.querySelector("#summary-booth"),
+  summaryHost: document.querySelector("#summary-host"),
+  summaryDate: document.querySelector("#summary-date"),
+  summaryTime: document.querySelector("#summary-time"),
+  customerFirstName: document.querySelector("#customer-first-name"),
+  customerLastName: document.querySelector("#customer-last-name"),
+  customerCompany: document.querySelector("#customer-company"),
+  customerPosition: document.querySelector("#customer-position"),
+  customerCountry: document.querySelector("#customer-country"),
+  customerEmail: document.querySelector("#customer-email"),
+  contactEmail: document.querySelector("#contact-email"),
+  contactEmailNa: document.querySelector("#contact-email-na"),
   bookingPurpose: document.querySelector("#booking-purpose"),
-  bookingAttendees: document.querySelector("#booking-attendees"),
-  bookingProducts: document.querySelectorAll('input[name="booking-products"]'),
-  productSummary: document.querySelector("#product-summary"),
   toast: document.querySelector("#toast")
 };
 
 const state = {
   selectedDate: bookingStartDate,
-  selectedResource: localStorage.getItem("booking-resource") in resources
-    ? localStorage.getItem("booking-resource")
-    : "meeting-room",
+  selectedResource: resources[0].id,
   userId: null,
   displayName: localStorage.getItem("booking-display-name") || "",
   isEmailUser: false,
@@ -138,24 +149,16 @@ function icon(path) {
 }
 
 function renderHeader() {
-  const resource = resources[state.selectedResource];
-  elements.roomName.textContent = resource.name;
-  elements.footerRoomName.textContent = resource.name;
-  elements.resourceDescription.textContent = resource.description;
-  document.title = `${resource.name} Booking`;
-  elements.resourceButtons.forEach((button) => {
-    const isActive = button.dataset.resource === state.selectedResource;
-    button.classList.toggle("active", isActive);
-    button.setAttribute("aria-pressed", String(isActive));
-  });
-  elements.timezoneNote.textContent = `Room hours 08:30–17:30${isCloudConfigured ? "" : " · Local demo"}`;
+  elements.roomName.textContent = "Carestream";
+  elements.footerRoomName.textContent = "Carestream Exhibition Booths";
+  document.title = "Carestream Exhibition Booking";
+  elements.timezoneNote.textContent = `Booth hours 08:30–17:30${isCloudConfigured ? "" : " · Local demo"}`;
   elements.selectedDateLabel.textContent = formatDate(state.selectedDate);
   elements.todayButton.textContent = formatShortDate(state.selectedDate);
   elements.datePicker.value = state.selectedDate;
-  elements.datePicker.min = bookingStartDate;
-  elements.datePicker.max = bookingEndDate;
   elements.previousDay.disabled = state.selectedDate <= bookingStartDate;
   elements.nextDay.disabled = state.selectedDate >= bookingEndDate;
+  elements.exportButton.hidden = !state.isAdmin;
   elements.identityLabel.textContent = state.isEmailUser
     ? (state.isAdmin ? state.displayName : maskEmail(state.email))
     : (state.displayName || "Set name");
@@ -164,51 +167,52 @@ function renderHeader() {
 
 function renderSlots() {
   elements.slotList.replaceChildren();
-  const bookingByTime = new Map(state.bookings.map((booking) => [booking.start_time.slice(0, 5), booking]));
+  const bookingBySlot = new Map(state.bookings.map((booking) => [`${booking.resource}:${booking.start_time.slice(0, 5)}`, booking]));
 
-  slotTimes().forEach((time, index) => {
-    const booking = bookingByTime.get(time);
-    const row = createElement("div", `slot-row ${booking ? "is-booked" : "is-available"}`);
-    row.style.animationDelay = `${Math.min(index * 18, 180)}ms`;
+  resources.forEach((resource, cardIndex) => {
+    const card = createElement("article", "booth-card");
+    card.style.animationDelay = `${cardIndex * 45}ms`;
+    card.append(createElement("h2", "booth-title", resource.name));
 
-    const timeCell = createElement("div", "slot-time", time);
-    const status = createElement("div", "slot-status");
-    const statusIcon = createElement("span", "slot-status-icon");
-    statusIcon.append(icon(booking ? "M8 12l3 3 5-6" : "M12 5v14M5 12h14"));
-    const detail = createElement("div", "slot-detail");
-    detail.append(createElement("strong", "", booking ? booking.display_name : "Available"));
-    detail.append(createElement("small", "", booking ? "Booked" : `${time}–${addMinutes(time, 30)}`));
-    if (booking?.purpose && booking?.attendees) {
-      const privateDetails = createElement("div", "booking-private");
-      const purpose = createElement("span", "");
-      purpose.append(createElement("b", "", "Purpose: "), booking.purpose);
-      const attendees = createElement("span", "");
-      attendees.append(createElement("b", "", "Attendees: "), booking.attendees);
-      privateDetails.append(purpose, attendees);
-      if (booking.products?.length) {
-        const products = createElement("span", "");
-        products.append(createElement("b", "", "Products: "), booking.products.join(", "));
-        privateDetails.append(products);
-      }
-      detail.append(privateDetails);
-    }
-    status.append(statusIcon, detail);
-
-    let action;
-    if (!booking) {
-      action = createElement("button", "reserve-button", "Book");
-      action.type = "button";
-      action.addEventListener("click", () => openBookingDialog(time));
-    } else if (booking.user_id === state.userId) {
-      action = createElement("button", "cancel-button", "Cancel");
-      action.type = "button";
-      action.addEventListener("click", () => cancelBooking(booking));
-    } else {
-      action = createElement("span", "booked-label", "Unavailable");
-    }
-
-    row.append(timeCell, status, action);
-    elements.slotList.append(row);
+    [[resource.morningHost, slotTimes().filter((time) => time < "13:00")], [resource.afternoonHost, slotTimes().filter((time) => time >= "13:00")]].forEach(([host, times]) => {
+      const section = createElement("section", "host-section");
+      section.append(createElement("h3", "host-name", host));
+      times.forEach((time) => {
+        const booking = bookingBySlot.get(`${resource.id}:${time}`);
+        const row = createElement("div", `booth-slot ${booking ? "is-booked" : "is-available"}`);
+        row.append(createElement("span", "booth-slot-time", `${time}–${addMinutes(time, 30)}`));
+        row.append(createElement("span", "booth-slot-status", booking ? booking.display_name : ""));
+        let action;
+        if (!booking) {
+          action = createElement("button", "reserve-button", "Book");
+          action.type = "button";
+          action.addEventListener("click", () => openBookingDialog(resource.id, time));
+        } else if (booking.user_id === state.userId) {
+          action = createElement("button", "cancel-button", "Cancel");
+          action.type = "button";
+          action.addEventListener("click", () => cancelBooking(booking));
+        } else {
+          action = createElement("span", "booked-label", "Booked");
+        }
+        row.append(action);
+        const canViewDetails = state.isAdmin || booking?.user_id === state.userId;
+        if (canViewDetails && (booking?.purpose || booking?.attendees || booking?.customer_email)) {
+          const details = createElement("div", "booking-details");
+          details.append(createElement("strong", "booking-details-title", "Booking details"));
+          details.append(createElement("span", "", `Customer: ${[booking.customer_first_name, booking.customer_last_name].filter(Boolean).join(" ") || booking.attendees || ""}`));
+          details.append(createElement("span", "", `Company: ${booking.company || ""}`));
+          details.append(createElement("span", "", `Position: ${booking.position_title || ""}`));
+          details.append(createElement("span", "", `Country: ${booking.country || ""}`));
+          details.append(createElement("span", "", `Customer email: ${booking.customer_email || ""}`));
+          details.append(createElement("span", "", `Carestream contact: ${booking.contact_email || "N/A"}`));
+          details.append(createElement("span", "", `Notes: ${booking.purpose || ""}`));
+          row.append(details);
+        }
+        section.append(row);
+      });
+      card.append(section);
+    });
+    elements.slotList.append(card);
   });
 }
 
@@ -225,13 +229,65 @@ function setLoading(isLoading) {
   elements.refreshButton.disabled = isLoading;
 }
 
+function csvCell(value) {
+  let text = String(value ?? "");
+  if (/^[=+\-@]/.test(text)) text = `'${text}`;
+  return `"${text.replaceAll('"', '""')}"`;
+}
+
+async function exportBookings() {
+  if (!state.isAdmin) return;
+  elements.exportButton.disabled = true;
+  try {
+    const dailyBookings = await Promise.all(bookingDates.map((date) => (
+      state.dataSource.list(date, resources.map((resource) => resource.id))
+    )));
+    const bookings = dailyBookings.flat().sort((first, second) => (
+      first.booking_date.localeCompare(second.booking_date)
+      || first.start_time.localeCompare(second.start_time)
+      || first.resource.localeCompare(second.resource)
+    ));
+    const headings = ["Date", "Time", "Booth", "Booth host", "First name", "Last name", "Company", "Position", "Country", "Customer email", "Carestream contact", "Notes"];
+    const rows = bookings.map((booking) => {
+      const resource = resourceById.get(booking.resource);
+      const startTime = booking.start_time.slice(0, 5);
+      const host = startTime < "13:00" ? resource?.morningHost : resource?.afternoonHost;
+      return [
+        booking.booking_date,
+        `${startTime}-${addMinutes(startTime, 30)}`,
+        resource?.name || booking.resource,
+        host || "",
+        booking.customer_first_name || "",
+        booking.customer_last_name || "",
+        booking.company || "",
+        booking.position_title || "",
+        booking.country || "",
+        booking.customer_email || "",
+        booking.contact_email || "N/A",
+        booking.purpose || ""
+      ];
+    });
+    const csv = `\uFEFF${[headings, ...rows].map((row) => row.map(csvCell).join(",")).join("\r\n")}`;
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "carestream-rsna-bookings.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast(`Exported ${bookings.length} bookings`);
+  } catch (error) {
+    showToast(error.message || "Export failed", true);
+  } finally {
+    elements.exportButton.disabled = false;
+  }
+}
+
 async function refreshBookings() {
   setLoading(true);
   const requestedDate = state.selectedDate;
-  const requestedResource = state.selectedResource;
   try {
-    const bookings = await state.dataSource.list(requestedDate, requestedResource);
-    if (requestedDate !== state.selectedDate || requestedResource !== state.selectedResource) return;
+    const bookings = await state.dataSource.list(requestedDate, resources.map((resource) => resource.id));
+    if (requestedDate !== state.selectedDate) return;
     state.bookings = bookings;
     renderSlots();
   } catch (error) {
@@ -250,15 +306,33 @@ function ensureIdentity() {
   return false;
 }
 
-function openBookingDialog(time) {
-  if (!ensureIdentity()) return;
+function showOverview() {
+  elements.appointmentPage.hidden = true;
+  elements.overviewHeader.hidden = false;
+  elements.overviewPage.hidden = false;
+  elements.overviewFooter.hidden = false;
+  window.scrollTo(0, 0);
+}
+
+function openBookingDialog(resourceId, time) {
+  state.selectedResource = resourceId;
+  const resource = resourceById.get(resourceId);
+  const boothHost = time < "13:00" ? resource.morningHost : resource.afternoonHost;
   elements.bookingSlot.value = time;
+  elements.bookingForm.reset();
+  elements.bookingSlot.value = time;
+  elements.contactEmail.disabled = false;
+  elements.contactEmail.required = true;
   elements.bookingPurpose.value = "";
-  elements.bookingAttendees.value = "";
-  elements.bookingProducts.forEach((checkbox) => { checkbox.checked = false; });
-  elements.productSummary.textContent = "Select products";
-  elements.bookingSummary.textContent = `${resources[state.selectedResource].name}: ${formatDate(state.selectedDate)}, ${time}–${addMinutes(time, 30)}, booked by ${state.displayName}.`;
-  elements.bookingDialog.showModal();
+  elements.summaryBooth.textContent = resource.name;
+  elements.summaryHost.textContent = boothHost;
+  elements.summaryDate.textContent = formatDate(state.selectedDate);
+  elements.summaryTime.textContent = `${time} - ${addMinutes(time, 30)}`;
+  elements.overviewHeader.hidden = true;
+  elements.overviewPage.hidden = true;
+  elements.overviewFooter.hidden = true;
+  elements.appointmentPage.hidden = false;
+  window.scrollTo(0, 0);
 }
 
 async function cancelBooking(booking) {
@@ -273,8 +347,8 @@ async function cancelBooking(booking) {
 }
 
 function createLocalDataSource() {
-  const storageKey = "meeting-room-demo-bookings";
-  const userKey = "meeting-room-demo-user";
+  const storageKey = "carestream-booth-demo-bookings";
+  const userKey = "carestream-booth-demo-user";
   let userId = localStorage.getItem(userKey);
   if (!userId) {
     userId = crypto.randomUUID();
@@ -285,12 +359,12 @@ function createLocalDataSource() {
   const read = () => JSON.parse(localStorage.getItem(storageKey) || "[]");
   const write = (bookings) => localStorage.setItem(storageKey, JSON.stringify(bookings));
   return {
-    async list(date, resource) {
-      return read().filter((booking) => booking.booking_date === date && (booking.resource || "meeting-room") === resource);
+    async list(date, resourceIds) {
+      return read().filter((booking) => booking.booking_date === date && resourceIds.includes(booking.resource));
     },
     async add(booking) {
       const bookings = read();
-      if (bookings.some((item) => (item.resource || "meeting-room") === booking.resource && item.booking_date === booking.booking_date && item.start_time === booking.start_time)) {
+      if (bookings.some((item) => item.resource === booking.resource && item.booking_date === booking.booking_date && item.start_time === booking.start_time)) {
         throw new Error("This time slot was just booked. Please choose another time.");
       }
       bookings.push({ ...booking, id: crypto.randomUUID(), user_id: userId });
@@ -324,7 +398,7 @@ async function createCloudDataSource() {
     if (state.isEmailUser) {
       const { data, error } = await client.from("booking_admins").select("display_name").eq("user_id", state.userId).maybeSingle();
       if (error) throw error;
-      if (data) {
+      if (data?.display_name === "Fiona") {
         state.isAdmin = true;
         state.displayName = data.display_name;
       }
@@ -344,11 +418,11 @@ async function createCloudDataSource() {
     .subscribe();
 
   return {
-    async list(date, resource) {
-      const { data, error } = await client.from("bookings").select("id, resource, booking_date, start_time, display_name, user_id").eq("booking_date", date).eq("resource", resource).order("start_time");
+    async list(date, resourceIds) {
+      const { data, error } = await client.from("bookings").select("id, resource, booking_date, start_time, display_name, user_id").eq("booking_date", date).in("resource", resourceIds).order("start_time");
       if (error) throw error;
       if (data.length === 0) return data;
-      const { data: details, error: detailsError } = await client.from("booking_details").select("booking_id, purpose, attendees, products").in("booking_id", data.map((booking) => booking.id));
+      const { data: details, error: detailsError } = await client.from("booking_details").select("booking_id, purpose, attendees, products, customer_first_name, customer_last_name, company, position_title, country, customer_email, contact_email").in("booking_id", data.map((booking) => booking.id));
       if (detailsError) throw detailsError;
       const detailByBooking = new Map(details.map((detail) => [detail.booking_id, detail]));
       return data.map((booking) => ({ ...booking, ...detailByBooking.get(booking.id) }));
@@ -361,9 +435,19 @@ async function createCloudDataSource() {
         p_display_name: booking.display_name,
         p_purpose: booking.purpose,
         p_attendees: booking.attendees,
-        p_products: booking.products
+        p_products: booking.products,
+        p_customer_first_name: booking.customer_first_name,
+        p_customer_last_name: booking.customer_last_name,
+        p_company: booking.company,
+        p_position_title: booking.position_title,
+        p_country: booking.country,
+        p_customer_email: booking.customer_email,
+        p_contact_email: booking.contact_email
       });
       if (error?.code === "23505") throw new Error("This time slot was just booked. Please choose another time.");
+      if (error?.code === "23514" && error.message?.includes("bookings_valid_resource")) {
+        throw new Error("The booking database needs the latest booth update. Please ask the administrator to run supabase.sql.");
+      }
       if (error) throw error;
     },
     async remove(id) {
@@ -424,15 +508,12 @@ elements.datePicker.addEventListener("change", async (event) => {
   await refreshBookings();
 });
 elements.refreshButton.addEventListener("click", refreshBookings);
-elements.resourceButtons.forEach((button) => {
-  button.addEventListener("click", async () => {
-    if (button.dataset.resource === state.selectedResource) return;
-    state.selectedResource = button.dataset.resource;
-    localStorage.setItem("booking-resource", state.selectedResource);
-    state.bookings = [];
-    renderHeader();
-    await refreshBookings();
-  });
+elements.exportButton.addEventListener("click", exportBookings);
+elements.appointmentBack.addEventListener("click", showOverview);
+elements.contactEmailNa.addEventListener("change", () => {
+  elements.contactEmail.disabled = elements.contactEmailNa.checked;
+  elements.contactEmail.required = !elements.contactEmailNa.checked;
+  if (elements.contactEmailNa.checked) elements.contactEmail.value = "";
 });
 elements.identityButton.addEventListener("click", () => {
   if (!state.isEmailUser) {
@@ -516,27 +597,31 @@ elements.identityForm.addEventListener("submit", (event) => {
 elements.bookingForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const submitButton = elements.bookingForm.querySelector('[type="submit"]');
-  const products = Array.from(elements.bookingProducts)
-    .filter((checkbox) => checkbox.checked)
-    .map((checkbox) => checkbox.value);
-  if (products.length === 0) {
-    showToast("Select at least one product", true);
-    return;
-  }
   submitButton.disabled = true;
   try {
     const time = elements.bookingSlot.value;
+    const customerName = `${elements.customerFirstName.value.trim()} ${elements.customerLastName.value.trim()}`;
     await state.dataSource.add({
       resource: state.selectedResource,
       booking_date: state.selectedDate,
       start_time: `${time}:00`,
       end_time: `${addMinutes(time, 30)}:00`,
-      display_name: state.displayName,
+      display_name: customerName.slice(0, 40),
       purpose: elements.bookingPurpose.value.trim(),
-      attendees: elements.bookingAttendees.value.trim(),
-      products
+      attendees: customerName,
+      products: [],
+      customer_first_name: elements.customerFirstName.value.trim(),
+      customer_last_name: elements.customerLastName.value.trim(),
+      company: elements.customerCompany.value.trim(),
+      position_title: elements.customerPosition.value.trim(),
+      country: elements.customerCountry.value.trim(),
+      customer_email: elements.customerEmail.value.trim(),
+      contact_email: elements.contactEmailNa.checked ? null : elements.contactEmail.value.trim()
     });
-    elements.bookingDialog.close();
+    state.displayName = customerName;
+    localStorage.setItem("booking-display-name", customerName);
+    showOverview();
+    renderHeader();
     showToast("Booking confirmed");
     await refreshBookings();
   } catch (error) {
@@ -545,16 +630,6 @@ elements.bookingForm.addEventListener("submit", async (event) => {
   } finally {
     submitButton.disabled = false;
   }
-});
-elements.bookingProducts.forEach((checkbox) => {
-  checkbox.addEventListener("change", () => {
-    const selectedProducts = Array.from(elements.bookingProducts)
-      .filter((item) => item.checked)
-      .map((item) => item.value);
-    elements.productSummary.textContent = selectedProducts.length
-      ? selectedProducts.join(", ")
-      : "Select products";
-  });
 });
 document.querySelectorAll("[data-close-dialog]").forEach((button) => {
   button.addEventListener("click", () => button.closest("dialog").close());
