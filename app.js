@@ -78,6 +78,7 @@ const state = {
   bookings: [],
   dataSource: null,
   pendingBookingInsert: null,
+  hasRenderedBookings: false,
   toastTimer: null
 };
 
@@ -167,6 +168,7 @@ function renderHeader() {
 }
 
 function renderSlots() {
+  elements.slotList.classList.toggle("is-updating", state.hasRenderedBookings);
   elements.slotList.replaceChildren();
   const bookingBySlot = new Map(state.bookings.map((booking) => [`${booking.resource}:${booking.start_time.slice(0, 5)}`, booking]));
 
@@ -215,6 +217,7 @@ function renderSlots() {
     });
     elements.slotList.append(card);
   });
+  state.hasRenderedBookings = true;
 }
 
 function showToast(message, isError = false) {
