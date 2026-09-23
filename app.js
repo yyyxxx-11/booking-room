@@ -247,7 +247,7 @@ async function exportBookings() {
       || first.start_time.localeCompare(second.start_time)
       || first.resource.localeCompare(second.resource)
     ));
-    const headings = ["Date", "Time", "Booth", "Booth host", "First name", "Last name", "Company", "Position", "Country", "Customer email", "Carestream contact", "Notes"];
+    const headings = ["Date", "Time", "Booth", "Booth host", "Booked by", "Customer first name", "Customer last name", "Company", "Position", "Country", "Customer email", "Carestream contact email", "Schedule your appointment"];
     const rows = bookings.map((booking) => {
       const resource = resourceById.get(booking.resource);
       const startTime = booking.start_time.slice(0, 5);
@@ -257,13 +257,14 @@ async function exportBookings() {
         `${startTime}-${addMinutes(startTime, 30)}`,
         resource?.name || booking.resource,
         host || "",
+        booking.display_name || "",
         booking.customer_first_name || "",
         booking.customer_last_name || "",
         booking.company || "",
         booking.position_title || "",
         booking.country || "",
         booking.customer_email || "",
-        booking.contact_email || "N/A",
+        booking.contact_email || "",
         booking.purpose || ""
       ];
     });
@@ -606,7 +607,7 @@ elements.bookingForm.addEventListener("submit", async (event) => {
       booking_date: state.selectedDate,
       start_time: `${time}:00`,
       end_time: `${addMinutes(time, 30)}:00`,
-      display_name: customerName.slice(0, 40),
+      display_name: state.displayName.slice(0, 40),
       purpose: elements.bookingPurpose.value.trim(),
       attendees: customerName,
       products: [],
@@ -618,8 +619,6 @@ elements.bookingForm.addEventListener("submit", async (event) => {
       customer_email: elements.customerEmail.value.trim(),
       contact_email: elements.contactEmailNa.checked ? null : elements.contactEmail.value.trim()
     });
-    state.displayName = customerName;
-    localStorage.setItem("booking-display-name", customerName);
     showOverview();
     renderHeader();
     showToast("Booking confirmed");
@@ -641,4 +640,3 @@ document.querySelectorAll("dialog").forEach((dialog) => {
 });
 
 initialize();
-
