@@ -77,6 +77,7 @@ const state = {
   email: "",
   bookings: [],
   dataSource: null,
+  pendingBookingInsert: null,
   toastTimer: null
 };
 
@@ -341,7 +342,7 @@ async function cancelBooking(booking) {
   try {
     await state.dataSource.remove(booking.id);
     showToast("Booking canceled");
-    await refreshBookings();
+    if (!state.dataSource.usesRealtime) await refreshBookings();
   } catch (error) {
     showToast(error.message || "Failed to cancel booking", true);
   }
@@ -360,6 +361,7 @@ function createLocalDataSource() {
   const read = () => JSON.parse(localStorage.getItem(storageKey) || "[]");
   const write = (bookings) => localStorage.setItem(storageKey, JSON.stringify(bookings));
   return {
+    usesRealtime: false,
     async list(date, resourceIds) {
       return read().filter((booking) => booking.booking_date === date && resourceIds.includes(booking.resource));
     },
@@ -415,10 +417,25 @@ async function createCloudDataSource() {
   await applySession(session);
 
   client.channel("booking-updates")
-    .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, () => refreshBookings())
+    .on("postgres_changes", { event: "*", schema: "public", table: "bookings" }, (payload) => {
+      const pending = state.pendingBookingInsert;
+      const inserted = payload.new;
+      if (
+        payload.eventType === "INSERT"
+        && pending
+        && inserted?.resource === pending.resource
+        && inserted?.booking_date === pending.bookingDate
+        && inserted?.start_time?.slice(0, 8) === pending.startTime
+      ) {
+        state.pendingBookingInsert = null;
+        return;
+      }
+      refreshBookings();
+    })
     .subscribe();
 
   return {
+    usesRealtime: true,
     async list(date, resourceIds) {
       const { data, error } = await client.from("bookings").select("id, resource, booking_date, start_time, display_name, user_id").eq("booking_date", date).in("resource", resourceIds).order("start_time");
       if (error) throw error;
@@ -602,6 +619,11 @@ elements.bookingForm.addEventListener("submit", async (event) => {
   try {
     const time = elements.bookingSlot.value;
     const customerName = `${elements.customerFirstName.value.trim()} ${elements.customerLastName.value.trim()}`;
+    state.pendingBookingInsert = {
+      resource: state.selectedResource,
+      bookingDate: state.selectedDate,
+      startTime: `${time}:00`
+    };
     await state.dataSource.add({
       resource: state.selectedResource,
       booking_date: state.selectedDate,
@@ -619,11 +641,12 @@ elements.bookingForm.addEventListener("submit", async (event) => {
       customer_email: elements.customerEmail.value.trim(),
       contact_email: elements.contactEmailNa.checked ? null : elements.contactEmail.value.trim()
     });
+    await refreshBookings();
     showOverview();
     renderHeader();
     showToast("Booking confirmed");
-    await refreshBookings();
   } catch (error) {
+    state.pendingBookingInsert = null;
     showToast(error.message || "Booking failed", true);
     await refreshBookings();
   } finally {
