@@ -10,7 +10,7 @@ const resources = [
   { id: "drx-revolution-rise", name: "DRX-Revolution & DRX-Rise", morningHost: "Booth Personnel 3", afternoonHost: "Booth Personnel 4" },
   { id: "dyna-c300", name: "Dyna-C300", morningHost: "Booth Personnel 5", afternoonHost: "Booth Personnel 6" },
   { id: "detectors-retrofits", name: "Detectors & Retrofits", morningHost: "Marco Riolfo", afternoonHost: "Booth Personnel 7" },
-  { id: "eclipse-carestream-360", name: "Eclipse & Carestream Healthcare International 360", morningHost: "Booth Personnel 8", afternoonHost: "Booth Personnel 9" }
+  { id: "eclipse-carestream-360", name: "Eclipse & Carestream 360°", morningHost: "Booth Personnel 8", afternoonHost: "Booth Personnel 9" }
 ];
 const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
 
