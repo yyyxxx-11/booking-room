@@ -4,13 +4,13 @@ const bookingStartDate = "2026-11-29";
 const bookingEndDate = "2026-12-02";
 const bookingDates = ["2026-11-29", "2026-11-30", "2026-12-01", "2026-12-02"];
 const resources = [
-  { id: "drx-evolution", name: "DRX Evolution", morningHost: "Joe Lu", afternoonHost: "TBD1" },
-  { id: "compass-fmt", name: "Compass-FMT", morningHost: "Salvatore Cesaria", afternoonHost: "TBD2" },
-  { id: "premium-performance-mobile", name: "New Premium Mobile & Performance Mobile", morningHost: "Felix Zhang", afternoonHost: "Antonio Cavallaro" },
-  { id: "drx-revolution-rise", name: "DRX-Revolution & DRX-Rise", morningHost: "TBD3", afternoonHost: "TBD4" },
-  { id: "dyna-c300", name: "Dyna-C300", morningHost: "Luke Li", afternoonHost: "TBD5" },
-  { id: "detectors-retrofits", name: "Detectors & Retrofits", morningHost: "Marco Riolfo", afternoonHost: "TBD6" },
-  { id: "eclipse-carestream-360", name: "Eclipse & Carestream 360", morningHost: "TBD7", afternoonHost: "TBD8" }
+  { id: "drx-evolution", name: "DRX Evolution", morningHost: "Joe Lu", afternoonHost: "Booth Personnel 1" },
+  { id: "compass-fmt", name: "DRX-Compass", morningHost: "Salvatore Cesaria", afternoonHost: "Booth Personnel 2" },
+  { id: "premium-performance-mobile", name: "DRX-Revolution Prime & Performance Mobile", morningHost: "Felix Zhang", afternoonHost: "Antonio Cavallaro" },
+  { id: "drx-revolution-rise", name: "DRX-Revolution & DRX-Rise", morningHost: "Booth Personnel 3", afternoonHost: "Booth Personnel 4" },
+  { id: "dyna-c300", name: "Dyna-C300", morningHost: "Booth Personnel 5", afternoonHost: "Booth Personnel 6" },
+  { id: "detectors-retrofits", name: "Detectors & Retrofits", morningHost: "Marco Riolfo", afternoonHost: "Booth Personnel 7" },
+  { id: "eclipse-carestream-360", name: "Eclipse & Carestream Healthcare International 360", morningHost: "Booth Personnel 8", afternoonHost: "Booth Personnel 9" }
 ];
 const resourceById = new Map(resources.map((resource) => [resource.id, resource]));
 
@@ -113,8 +113,8 @@ function formatShortDate(dateString) {
 }
 
 function slotTimes() {
-  return Array.from({ length: 18 }, (_, index) => {
-    const totalMinutes = 8 * 60 + 30 + index * 30;
+  return Array.from({ length: 14 }, (_, index) => {
+    const totalMinutes = 10 * 60 + index * 30;
     const hour = String(Math.floor(totalMinutes / 60)).padStart(2, "0");
     const minute = String(totalMinutes % 60).padStart(2, "0");
     return `${hour}:${minute}`;
@@ -151,10 +151,10 @@ function icon(path) {
 }
 
 function renderHeader() {
-  elements.roomName.textContent = "Carestream";
-  elements.footerRoomName.textContent = "Carestream Exhibition Booths";
-  document.title = "Carestream Exhibition Booking";
-  elements.timezoneNote.textContent = `Booth hours 08:30–17:30${isCloudConfigured ? "" : " · Local demo"}`;
+  elements.roomName.textContent = "Carestream Healthcare International";
+  elements.footerRoomName.textContent = "Carestream Healthcare International Exhibition Booth";
+  document.title = "Carestream Healthcare International Exhibition Booking";
+  elements.timezoneNote.textContent = `Booth hours 10:00–17:00${isCloudConfigured ? "" : " · Local demo"}`;
   elements.selectedDateLabel.textContent = formatDate(state.selectedDate);
   elements.todayButton.textContent = formatShortDate(state.selectedDate);
   elements.datePicker.value = state.selectedDate;
@@ -177,7 +177,7 @@ function renderSlots() {
     card.style.animationDelay = `${cardIndex * 45}ms`;
     card.append(createElement("h2", "booth-title", resource.name));
 
-    [[resource.morningHost, slotTimes().filter((time) => time < "13:00")], [resource.afternoonHost, slotTimes().filter((time) => time >= "13:00")]].forEach(([host, times]) => {
+    [[resource.morningHost, slotTimes().filter((time) => time < "13:30")], [resource.afternoonHost, slotTimes().filter((time) => time >= "13:30")]].forEach(([host, times]) => {
       const section = createElement("section", "host-section");
       section.append(createElement("h3", "host-name", host));
       times.forEach((time) => {
@@ -207,7 +207,7 @@ function renderSlots() {
           details.append(createElement("span", "", `Position: ${booking.position_title || ""}`));
           details.append(createElement("span", "", `Country: ${booking.country || ""}`));
           details.append(createElement("span", "", `Customer email: ${booking.customer_email || ""}`));
-          details.append(createElement("span", "", `Carestream contact: ${booking.contact_email || "N/A"}`));
+          details.append(createElement("span", "", `Carestream Healthcare International contact: ${booking.contact_email || "N/A"}`));
           details.append(createElement("span", "", `Notes: ${booking.purpose || ""}`));
           row.append(details);
         }
@@ -251,11 +251,11 @@ async function exportBookings() {
       || first.start_time.localeCompare(second.start_time)
       || first.resource.localeCompare(second.resource)
     ));
-    const headings = ["Date", "Time", "Booth", "Booth host", "Booked by", "Customer first name", "Customer last name", "Company", "Position", "Country", "Customer email", "Carestream contact email", "Schedule your appointment"];
+    const headings = ["Date", "Time", "Booth", "Booth host", "Booked by", "Customer first name", "Customer last name", "Company", "Position", "Country", "Customer email", "Carestream Healthcare International contact email", "Schedule your appointment"];
     const rows = bookings.map((booking) => {
       const resource = resourceById.get(booking.resource);
       const startTime = booking.start_time.slice(0, 5);
-      const host = startTime < "13:00" ? resource?.morningHost : resource?.afternoonHost;
+      const host = startTime < "13:30" ? resource?.morningHost : resource?.afternoonHost;
       return [
         booking.booking_date,
         `${startTime}-${addMinutes(startTime, 30)}`,
@@ -276,7 +276,7 @@ async function exportBookings() {
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = "carestream-rsna-bookings.csv";
+    link.download = "carestream-healthcare-international-rsna-bookings.csv";
     link.click();
     URL.revokeObjectURL(url);
     showToast(`Exported ${bookings.length} bookings`);
@@ -322,7 +322,7 @@ function showOverview() {
 function openBookingDialog(resourceId, time) {
   state.selectedResource = resourceId;
   const resource = resourceById.get(resourceId);
-  const boothHost = time < "13:00" ? resource.morningHost : resource.afternoonHost;
+  const boothHost = time < "13:30" ? resource.morningHost : resource.afternoonHost;
   elements.bookingSlot.value = time;
   elements.bookingForm.reset();
   elements.bookingSlot.value = time;
