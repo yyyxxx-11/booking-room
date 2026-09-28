@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#f47421">
-  <meta name="description" content="Carestream exhibition booth booking">
-  <title>Carestream Exhibition Booking</title>
+  <meta name="description" content="Carestream Healthcare International exhibition booth booking">
+  <title>Carestream Healthcare International Exhibition Booking</title>
   <link rel="stylesheet" href="styles.css?v=20260923-1">
   <script src="config.js?v=20260911-4"></script>
   <script type="module" src="app.js?v=20260923-8"></script>
 </head>
 <body>
   <header class="topbar" id="overview-header">
-    <a class="brand" href="./" aria-label="Carestream exhibition booking home">
-      <strong id="room-name">Carestream</strong>
+    <a class="brand" href="./" aria-label="Carestream Healthcare International exhibition booking home">
+      <strong id="room-name">Carestream Healthcare International</strong>
     </a>
     <button class="identity-button" id="identity-button" type="button" aria-label="Set your name or manage account">
       <span class="avatar" id="avatar">?</span>
@@ -27,7 +27,7 @@
       <div>
         <p class="eyebrow" id="resource-description">Exhibition booth booking</p>
         <h1 id="date-heading">Schedule your demo at RSNA</h1>
-        <p class="timezone-note"><span id="selected-date-label">Sunday, November 29</span> · <span id="timezone-note">Booth hours 08:30–17:30</span></p>
+        <p class="timezone-note"><span id="selected-date-label">Sunday, November 29</span> · <span id="timezone-note">Booth hours 10:00–17:00</span></p>
       </div>
       <div class="date-controls">
         <button class="icon-button" id="previous-day" type="button" aria-label="Previous day" title="Previous day">
@@ -66,6 +66,7 @@
       <div class="booth-grid" id="slot-list" aria-live="polite">
         <div class="loading-state"><span class="spinner"></span>Loading bookings...</div>
       </div>
+      <p class="overview-availability-note">* Schedule availability may change at any time. Names marked Booth Personnel will be confirmed prior to the visit.</p>
     </section>
   </main>
 
@@ -125,7 +126,7 @@
   </dialog>
 
   <section class="appointment-page" id="appointment-page" hidden>
-    <div class="appointment-brand">Carestream</div>
+    <div class="appointment-brand">Carestream Healthcare International</div>
     <button class="appointment-back" id="appointment-back" type="button">← Go back</button>
     <div class="appointment-panel">
       <h1>Appointment Information</h1>
@@ -150,7 +151,7 @@
         </fieldset>
 
         <fieldset>
-          <legend>*Please provide your Carestream contact email</legend>
+          <legend>*Please provide your Carestream Healthcare International contact email</legend>
           <label><span>*Email</span><input id="contact-email" type="email" maxlength="254" required></label>
           <label class="na-option"><input id="contact-email-na" type="checkbox"> N/A</label>
         </fieldset>
@@ -160,13 +161,11 @@
           <textarea id="booking-purpose" maxlength="1000" placeholder="Please provide any information on the customer that would be helpful to the presenter to provide a more customized and valuable demo."></textarea>
         </fieldset>
         <div class="appointment-submit"><button type="submit">Send</button></div>
-        <p class="availability-note">* Schedule availability may change at any time</p>
       </form>
     </div>
   </section>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <footer id="overview-footer"><span id="footer-room-name">Carestream Exhibition Booths</span><span>Bookings sync in real time</span></footer>
+  <footer id="overview-footer"><span id="footer-room-name">Carestream Healthcare International Exhibition Booth</span><span>Bookings sync in real time</span></footer>
 </body>
 </html>
-
